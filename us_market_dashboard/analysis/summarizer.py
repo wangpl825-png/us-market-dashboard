@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 from config import CRASH_PERIODS
 
 
-def _gemini(prompt: str, max_tokens: int = 2000) -> str:
+def _gemini(prompt: str, max_tokens: int = 4000) -> str:
     """Call Gemini API, reading key fresh each time."""
     from config import GEMINI_API_KEY as _KEY
     if not _KEY:
@@ -75,7 +75,7 @@ def summarize_news(articles: List[Dict], category: str = "general") -> str:
 3. 📊 市場情緒判斷（偏多/中性/偏空，並說明原因）
 4. ⚠️ 需關注的風險因素（最多3項）
 """
-    result = _gemini(prompt, max_tokens=1500)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     titles = [str(a.get("title", "")) for a in top[:5]]
@@ -118,7 +118,7 @@ def compare_with_crashes(
 3. 🛡️ 基於歷史經驗的避險建議（具體、可操作）
 4. 📈 如果情況惡化，最可能的劇本
 """
-    result = _gemini(prompt, max_tokens=2000)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     return f"**歷史比較**\n\nVIX={vix:.1f}，殖利率利差={yield_spread:.2f}%\n\n{crash_block}\n\n建議：分散持股、增加防禦性配置（公債、黃金）、降低槓桿。"
@@ -159,7 +159,7 @@ def generate_hedge_strategy(
 3. 📊 建議的調整後投資組合配置（百分比）
 4. ⚡ 觸發進一步降低風險的警示條件
 """
-    result = _gemini(prompt, max_tokens=1800)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     return "請設定 GEMINI_API_KEY 以啟用 AI 避險分析。"
@@ -178,7 +178,7 @@ def summarize_ticker(ticker: str, news: List[Dict], tech_signal: str) -> str:
 
 請用2-3句話總結 {ticker} 目前的市場動態、基本面或技術面重點。
 """
-    result = _gemini(prompt, max_tokens=200)
+    result = _gemini(prompt, max_tokens=500)
     return result if result else f"{ticker} | {tech_signal} | {titles[0] if titles else ''}"
 
 
@@ -220,7 +220,7 @@ def analyze_overview(
 
 語氣要像跟朋友解釋，讓沒有財經背景的人也看得懂。
 """
-    result = _gemini(prompt, max_tokens=2200)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     sentiment = "緊張" if vix > 25 else ("平靜" if vix < 15 else "中性")
@@ -262,7 +262,7 @@ def analyze_stock(
 3. **新聞影響**（最新消息對股價有什麼可能影響？）
 4. **短線操作建議**（未來1-2週，持有/觀望/減碼？說明理由）
 """
-    result = _gemini(prompt, max_tokens=2200)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     rsi_txt = "超買，注意回調" if rsi > 70 else ("超賣，關注反彈" if rsi < 30 else "中性")
@@ -301,7 +301,7 @@ def analyze_macro(
 4. **對股市的影響**（總體經濟環境對股市是順風還是逆風？）
 5. **與歷史的比較**（目前環境最像哪個歷史時期？）
 """
-    result = _gemini(prompt, max_tokens=2500)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     yc = "倒掛（歷史衰退前兆）" if yield_spread < 0 else "正常"
@@ -337,7 +337,7 @@ def analyze_news_sentiment(
 3. **情緒與股市的關係**（目前情緒對短線股市走勢有什麼暗示？）
 4. **反向指標提醒**（情緒是否走到極端？是否該考慮逆向操作？）
 """
-    result = _gemini(prompt, max_tokens=2000)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     dominant = "偏多" if bullish_pct > bearish_pct else ("偏空" if bearish_pct > bullish_pct else "中性")
@@ -375,7 +375,7 @@ def analyze_mc_results(
 3. **模擬結果是否合理**（根據目前市場環境，這個預測偏樂觀還是偏保守？）
 4. **投資決策建議**（根據這些數字，現在是好的進場時機嗎？）
 """
-    result = _gemini(prompt, max_tokens=2200)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     dollar_p50 = current_price * p50 / 100
@@ -423,7 +423,7 @@ def analyze_portfolio(
 4. **具體改善建議**（最重要的1-2個調整是什麼？）
 5. **心理準備**（最壞情況下可能損失多少，應該如何心理準備？）
 """
-    result = _gemini(prompt, max_tokens=2500)
+    result = _gemini(prompt, max_tokens=4000)
     if result:
         return result
     dollar_p50 = total_value * p50 / 100
