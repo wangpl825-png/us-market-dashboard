@@ -941,7 +941,7 @@ with tab_settings:
     if st.button("測試 Gemini API", key="test_gemini"):
         import requests as _req
         _key = st.secrets.get("GEMINI_API_KEY", "")
-        _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_key}"
+        _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_key}"
         _payload = {
             "contents": [{"role": "user", "parts": [{"text": "用一句繁體中文說你好"}]}],
             "generationConfig": {"maxOutputTokens": 50, "temperature": 0.3},

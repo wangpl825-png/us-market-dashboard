@@ -19,7 +19,7 @@ def _gemini(prompt: str, max_tokens: int = 800) -> str:
     try:
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-2.0-flash:generateContent?key={_KEY}"
+            f"gemini-2.5-flash:generateContent?key={_KEY}"
         )
         system_msg = (
             "You are a professional financial analyst. "
@@ -48,8 +48,11 @@ def _gemini(prompt: str, max_tokens: int = 800) -> str:
         print(f"[summarizer] Gemini unexpected response: {data}")
         return ""
     except Exception as e:
+        import traceback
+        err = traceback.format_exc()
         print(f"[summarizer] Gemini error: {e}")
-        return ""
+        print(err)
+        return f"[Gemini錯誤] {str(e)}"
 
 
 @st.cache_data(ttl=3600)
@@ -179,7 +182,6 @@ def summarize_ticker(ticker: str, news: List[Dict], tech_signal: str) -> str:
     return result if result else f"{ticker} | {tech_signal} | {titles[0] if titles else ''}"
 
 
-@st.cache_data(ttl=1800)
 def analyze_overview(
     vix: float, vix_prev: float,
     dxy: float, oil: float,
@@ -225,7 +227,6 @@ def analyze_overview(
     return f"**市場氛圍：{sentiment}**\n\nVIX={vix:.1f}，殖利率利差={yield_spread:+.2f}%，恐懼貪婪={fg_val}（{fg_cls}）\n\n➡️ 請設定 GEMINI_API_KEY 以啟用完整 AI 分析。"
 
 
-@st.cache_data(ttl=1800)
 def analyze_stock(
     ticker: str, company_name: str,
     close: float, pct_change: float,
@@ -268,7 +269,6 @@ def analyze_stock(
     return f"**{ticker} 快速判讀**\n\n技術訊號：{signal} | RSI={rsi:.1f}（{rsi_txt}）\n\n➡️ 請設定 GEMINI_API_KEY 以啟用完整 AI 分析。"
 
 
-@st.cache_data(ttl=3600)
 def analyze_macro(
     unemployment: float, unemployment_chg: float,
     cpi: float, cpi_chg: float,
@@ -308,7 +308,6 @@ def analyze_macro(
     return f"**總體經濟快速判讀**\n\n殖利率曲線{yc}（{yield_spread:+.2f}%），失業率{unemployment:.1f}%，Fed利率{fed_rate:.2f}%\n\n➡️ 請設定 GEMINI_API_KEY 以啟用完整 AI 分析。"
 
 
-@st.cache_data(ttl=1800)
 def analyze_news_sentiment(
     bullish_pct: float, bearish_pct: float, neutral_pct: float,
     total_articles: int,
@@ -345,7 +344,6 @@ def analyze_news_sentiment(
     return f"**新聞情緒快速判讀**\n\n共分析 {total_articles} 篇文章，情緒{dominant}（多{bullish_pct:.0f}% / 空{bearish_pct:.0f}%）。VIX={vix:.1f}。\n\n➡️ 請設定 GEMINI_API_KEY 以啟用完整 AI 分析。"
 
 
-@st.cache_data(ttl=3600)
 def analyze_mc_results(
     ticker: str,
     current_price: float,
@@ -384,7 +382,6 @@ def analyze_mc_results(
     return f"**模擬結果快速解讀**\n\nP50={p50:+.2f}%，虧損機率={loss_prob:.1f}%，VaR={var_95:+.1f}%\n\n➡️ 請設定 GEMINI_API_KEY 以啟用完整 AI 分析。"
 
 
-@st.cache_data(ttl=3600)
 def analyze_portfolio(
     holdings: dict,
     total_value: float,
