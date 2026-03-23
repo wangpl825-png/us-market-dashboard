@@ -51,6 +51,42 @@ from utils.helpers import (
     rsi_signal_text, vix_level_text, yield_curve_signal, delta_arrow,
 )
 
+# ── Glossary helper ───────────────────────────────────────
+def show_glossary(terms: dict, title: str = "📖 名詞說明"):
+    with st.expander(title, expanded=False):
+        cols = st.columns(2)
+        items = list(terms.items())
+        half = (len(items) + 1) // 2
+        for i, (term, desc) in enumerate(items):
+            with cols[0 if i < half else 1]:
+                st.markdown(f"**{term}**  \n{desc}")
+
+
+
+
+# ── AI analysis section helper ────────────────────────────
+def _ai_section(section_key: str, label: str, fn, *args, **kwargs):
+    st.divider()
+    st.subheader("🤖 AI 綜合解讀")
+    result_key = f"ai_{section_key}"
+    col_btn, col_tip = st.columns([2, 3])
+    with col_btn:
+        if st.button(f"✨ 生成 {label} 綜合分析",
+                     key=f"btn_{section_key}", type="primary"):
+            with st.spinner("Gemini AI 分析中..."):
+                st.session_state[result_key] = fn(*args, **kwargs)
+    with col_tip:
+        st.caption("點擊按鈕，AI 將整合本頁所有數據，以白話文解讀市場狀況")
+    if result_key in st.session_state and st.session_state[result_key]:
+        st.markdown(
+            f'''<div style="
+                background:#1a2332;border-left:4px solid #2979FF;
+                border-radius:8px;padding:16px 20px;margin-top:12px;
+                font-size:0.9rem;line-height:1.8;color:#FAFAFA;
+            ">{st.session_state[result_key]}</div>''',
+            unsafe_allow_html=True,
+        )
+
 # ── Global CSS ────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -154,6 +190,18 @@ tabs = st.tabs([
 # ══════════════════════════════════════════════════════════
 with tab_overview:
     # ── Top KPI row ──────────────────────────────────────
+
+    show_glossary({
+        "VIX 恐慌指數": "衡量市場預期波動性的指標，又稱「恐懼指數」。VIX > 30 代表市場高度恐慌，< 15 代表市場平靜。",
+        "美元指數 (DXY)": "追蹤美元相對於六大主要貨幣的強弱。DXY 上漲通常對黃金、新興市場不利。",
+        "殖利率曲線 (Yield Curve)": "短期與長期公債利率的關係。10Y-2Y 利差為負（倒掛）時，歷史上常是衰退前兆。",
+        "恐懼貪婪指數": "CNN 編制的綜合情緒指標（0-100）。0-25 極度恐懼，75-100 極度貪婪。",
+        "Put/Call Ratio": "期權市場中賣權與買權的比例。> 1.0 代表市場偏空，< 0.7 代表市場偏多。",
+        "Fed Funds Rate": "聯準會設定的基準利率，影響全球資金成本與股市估值。",
+        "WTI 原油": "西德州中質原油，美國原油定價基準。油價上漲通常推升通膨。",
+        "衰退風險評分": "本系統綜合殖利率曲線、失業率、消費者信心等指標計算的衰退機率分數。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
     with st.spinner("載入市場指標..."):
         vix_now, vix_prev   = fetch_vix()
         dxy_now, dxy_prev   = fetch_dxy()
@@ -256,10 +304,37 @@ with tab_overview:
             st.warning(sig)
 
 
+    # ── AI 綜合解讀 ───────────────────────────────────────
+    _ai_section(
+        "overview", "總覽",
+        analyze_overview,
+        vix_now, vix_prev, dxy_now, oil_now,
+        yc_spread,
+        macro_snap.get("fed_funds_rate", {}).get("value", 0),
+        macro_snap.get("unemployment_rate", {}).get("value", 0),
+        macro_snap.get("cpi_all_urban", {}).get("value", 0),
+        fear_greed, pc_ratio,
+        recession_risk["score"], recession_risk["label"],
+    )
+
 # ══════════════════════════════════════════════════════════
 #  TAB 2 — STOCKS
 # ══════════════════════════════════════════════════════════
 with tab_stocks:
+
+    show_glossary({
+        "RSI (相對強弱指數)": "衡量股票超買超賣的動能指標（0-100）。> 70 為超買（可能回調），< 30 為超賣（可能反彈）。",
+        "MACD": "移動平均收斂背離指標。MACD 線高於信號線為多頭訊號，反之為空頭訊號。",
+        "布林通道 %B": "價格在布林通道中的相對位置。0.8 以上為超買，0.2 以下為超賣。",
+        "ATR (真實波動幅度)": "衡量股票平均每日波動範圍，數值越大代表波動越劇烈。",
+        "MA5 / MA10 / MA200": "5日、10日、200日移動平均線。價格站上 MA200 通常視為長線多頭訊號。",
+        "Beta (貝塔值)": "衡量個股相對大盤的波動程度。Beta > 1 代表波動比大盤大，< 1 代表較穩定。",
+        "Forward P/E": "預測本益比，以未來12個月預估EPS計算。數值越低代表估值相對便宜。",
+        "殖利率 (Dividend Yield)": "每年股息佔股價的百分比，越高代表現金回報越豐厚。",
+        "VaR (風險值)": "在95%信心水準下，未來一個月最多可能損失的金額。",
+        "CVaR (條件風險值)": "在最差的5%情境下，平均損失金額。比VaR更能反映尾端風險。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
     col_sel, col_period = st.columns([3, 1])
     with col_sel:
         ticker = st.selectbox(
@@ -358,11 +433,42 @@ with tab_stocks:
             st.metric("95% CVaR", f"{mc_single['cvar_95']:+.1f}%")
 
 
+    if not df.empty:
+        last2 = df.iloc[-1]
+        ticker_news2 = fetch_finnhub_ticker_news(ticker)
+        news_titles2  = [str(a.get("title","")) for a in ticker_news2[:6]]
+        _ai_section(
+            f"stock_{ticker}", f"{ticker}",
+            analyze_stock,
+            ticker, info.get("name", ticker),
+            float(last2["close"]), float(last2.get("pct_change", 0)),
+            float(last2.get("rsi", 50)), float(last2.get("macd", 0)),
+            float(last2.get("macd_signal", 0)), float(last2.get("bb_pct", 0.5)),
+            float(last2.get("atr", 0)), float(last2.get("ma50", 0)),
+            float(last2.get("ma200", 0)),
+            info.get("pe_ratio"), info.get("forward_pe"), info.get("beta"),
+            signal, news_titles2,
+        )
+
 # ══════════════════════════════════════════════════════════
 #  TAB 3 — MACRO
 # ══════════════════════════════════════════════════════════
 with tab_macro:
     st.subheader("🌐 總體經濟指標")
+
+    show_glossary({
+        "CPI (消費者物價指數)": "衡量一籃子消費品價格變動，是最常用的通膨指標。年增超過2%為Fed警戒線。",
+        "Core CPI (核心CPI)": "剔除食品與能源的CPI，更能反映長期通膨趨勢。",
+        "Core PCE": "Fed最偏好的通膨指標，比CPI更能反映消費者實際支出結構。",
+        "失業率 (Unemployment Rate)": "勞動力中失業人口的比例。< 4% 通常視為充分就業，上升超過0.5%是衰退警訊。",
+        "消費者信心指數": "密西根大學調查，衡量民眾對經濟的樂觀程度（基準=100）。低於70代表悲觀。",
+        "M2 貨幣供給": "流通中現金加上活期與定期存款的總量。M2收縮通常預示流動性緊縮。",
+        "殖利率曲線 10Y-2Y": "10年期公債利率減去2年期的利差。負值（倒掛）歷史上在衰退前約12-18個月出現。",
+        "住宅開工數": "新開工建設的住宅數量，反映房市景氣與民間投資意願。",
+        "工業生產指數": "衡量製造業、採礦業與公用事業的產出水準，反映實體經濟強弱。",
+        "零售銷售": "零售商的商品銷售額，直接反映消費者支出與經濟活力。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
     with st.spinner("載入 FRED 資料..."):
         macro_snap = get_macro_snapshot()
 
@@ -428,11 +534,40 @@ with tab_macro:
         st.markdown(analysis)
 
 
+    # ── AI 綜合解讀 ───────────────────────────────────────
+    macro_snap3 = get_macro_snapshot()
+    _ai_section(
+        "macro", "總體經濟",
+        analyze_macro,
+        macro_snap3.get("unemployment_rate", {}).get("value", 4.0),
+        macro_snap3.get("unemployment_rate", {}).get("change", 0),
+        macro_snap3.get("cpi_all_urban", {}).get("value", 300),
+        macro_snap3.get("cpi_all_urban", {}).get("change", 0),
+        macro_snap3.get("fed_funds_rate", {}).get("value", 5.25),
+        macro_snap3.get("10y_treasury", {}).get("value", 4.3),
+        macro_snap3.get("2y_treasury", {}).get("value", 4.8),
+        macro_snap3.get("yield_curve_spread", {}).get("value", -0.3),
+        macro_snap3.get("m2_money_supply", {}).get("value", 21000),
+        macro_snap3.get("m2_money_supply", {}).get("pct_change", 0),
+        macro_snap3.get("consumer_confidence", {}).get("value", 70),
+        macro_snap3.get("gdp_growth", {}).get("value", 2.5),
+        get_recession_risk_score(macro_snap3)["score"],
+    )
+
 # ══════════════════════════════════════════════════════════
 #  TAB 4 — NEWS & SENTIMENT
 # ══════════════════════════════════════════════════════════
 with tab_news:
     st.subheader("📰 市場新聞與情緒分析")
+
+    show_glossary({
+        "情緒分析 (Sentiment Analysis)": "自動分析新聞標題的正負面傾向。偏多=看漲，偏空=看跌，中性=無明顯方向。",
+        "StockTwits": "類似 Twitter 的股票投資社群平台，熱門股票代表散戶關注度高。",
+        "RSS Feed": "新聞網站提供的自動更新訂閱格式，本系統透過此方式抓取最新財經新聞。",
+        "偏多 (Bullish)": "預期股價將上漲的市場情緒或觀點。",
+        "偏空 (Bearish)": "預期股價將下跌的市場情緒或觀點。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
 
     with st.spinner("載入新聞..."):
         news_df = get_all_news(include_reddit=True)
@@ -468,7 +603,7 @@ with tab_news:
                     summary = summarize_news(news_list[:20])
                 st.markdown(summary)
             else:
-                st.caption("點擊按鈕生成 AI 摘要（需要 OPENAI_API_KEY）")
+                st.caption("點擊按鈕生成 AI 摘要（需要 GEMINI_API_KEY）")
 
         with col_feed:
             st.markdown("**📡 最新新聞流**")
@@ -485,9 +620,9 @@ with tab_news:
                     pub_str = pd.to_datetime(row["published"]).strftime("%m/%d %H:%M")
                 except Exception:
                     pass
-                link    = row.get("link", "#")
-                title   = row.get("title", "")
-                source  = row.get("source", "")
+                link    = str(row.get("link") or "#")
+                title   = str(row.get("title") or "")
+                source  = str(row.get("source") or "")
                 st.markdown(
                     f"[{title[:90]}]({link})  \n"
                     f"<small style='color:#78909C'>{source} · {pub_str}</small>",
@@ -496,11 +631,36 @@ with tab_news:
             st.markdown('</div>', unsafe_allow_html=True)
 
 
+    # ── AI 綜合解讀 ───────────────────────────────────────
+    if not news_df.empty:
+        top_headlines4 = [str(r.get("title","")) for _, r in news_df.head(8).iterrows()]
+        trending4      = fetch_stocktwits_trending()
+        vix4, _        = fetch_vix()
+        _ai_section(
+            "news", "新聞情緒",
+            analyze_news_sentiment,
+            sentiment["bullish_pct"], sentiment["bearish_pct"],
+            sentiment["neutral_pct"], sentiment["total"],
+            top_headlines4, trending4, vix4,
+        )
+
 # ══════════════════════════════════════════════════════════
 #  TAB 5 — MONTE CARLO (Market-level)
 # ══════════════════════════════════════════════════════════
 with tab_mc:
     st.subheader("🎲 S&P 500 市場蒙地卡羅模擬")
+
+    show_glossary({
+        "蒙地卡羅模擬 (Monte Carlo)": "透過大量隨機模擬（本系統10,000次）來預測未來可能的結果範圍，而非單一預測值。",
+        "百分位 (Percentile)": "P99代表10,000次模擬中排名第9,900好的結果，P1代表最差1%的情境。",
+        "P50 (中位數)": "有一半的模擬結果比這個數字好，另一半比這個數字差，最接近「最可能的結果」。",
+        "VaR (Value at Risk)": "在95%信心水準下，一個月內最壞可能損失多少。例如VaR=-8%代表有5%機率損失超過8%。",
+        "CVaR (條件風險值)": "最差5%情境的平均損失，比VaR更保守，用於評估極端風險。",
+        "Block Bootstrap": "本系統使用的抽樣方法，以5天為一組抽取歷史報酬，保留市場連續崩跌的特性。",
+        "對數報酬 (Log Return)": "計算股票漲跌時使用的數學方式，比百分比報酬更適合長期累積計算。",
+        "GBM (幾何布朗運動)": "假設股價走勢具隨機性的數學模型，是蒙地卡羅模擬的理論基礎。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
     st.caption("使用過去252交易日 + 四大歷史崩盤數據，運算10,000次")
 
     mc_ticker = st.selectbox(
@@ -554,6 +714,19 @@ with tab_mc:
                     {"bullish_pct": 40, "bearish_pct": 40},
                 )
             st.markdown(hedge_txt)
+    elif mc_res:
+        vix5, _ = fetch_vix()
+        ys5 = get_macro_snapshot().get("yield_curve_spread", {}).get("value", 0)
+        _ai_section(
+            f"mc_{mc_ticker}", f"{mc_ticker} 模擬",
+            analyze_mc_results,
+            mc_ticker, mc_res["current_price"],
+            mc_res["percentiles"]["P99"], mc_res["percentiles"]["P90"],
+            mc_res["percentiles"]["P50"], mc_res["percentiles"]["P10"],
+            mc_res["percentiles"]["P01"],
+            mc_res["loss_probability"], mc_res["var_95"], mc_res["cvar_95"],
+            vix5, ys5,
+        )
     else:
         st.info("點擊「執行模擬」開始運算。")
 
@@ -563,6 +736,18 @@ with tab_mc:
 # ══════════════════════════════════════════════════════════
 with tab_portfolio:
     st.subheader("💼 我的投資組合模擬")
+
+    show_glossary({
+        "投資組合 (Portfolio)": "持有多支股票或ETF的組合，透過分散配置降低單一股票風險。",
+        "權重 (Weight)": "每支股票佔總投資金額的百分比。例如 AAPL 30% 代表用30%的資金購買蘋果股票。",
+        "P99 / P90 / P50 / P10 / P01": "模擬結果的百分位分佈。P99=最樂觀1%，P50=中位數，P01=最悲觀1%。",
+        "虧損起始百分位": "從第幾個百分位開始出現虧損。例如「P35」代表有35%的模擬結果是虧損的。",
+        "避險策略 (Hedging)": "透過配置防禦性資產（如黃金GLD、公債TLT）或反向部位來降低投資組合風險。",
+        "ETF (指數股票型基金)": "追蹤特定指數的基金，如VOO追蹤S&P500，分散投資500家大型企業。",
+        "分散化 (Diversification)": "投資不同行業、不同類型資產，避免單一事件造成全部虧損。",
+        "期望報酬 (Expected Return)": "所有模擬結果的平均值，代表統計上最可能的報酬，但不保證一定發生。",
+    }, "📖 本頁名詞說明（點擊展開）")
+
 
     PORTFOLIO_TEMPLATE = """# 格式：代碼, 權重%, 金額(USD)
 AAPL, 25, 25000
@@ -689,6 +874,21 @@ GLD,  10, 10000"""
                     mc_orig, macro_snap, vix_now,
                 )
             st.markdown(hedge_advice)
+    elif mc_orig and mc_hedge:
+        holdings6  = st.session_state.get("holdings_orig", {})
+        vix6, _    = fetch_vix()
+        _ai_section(
+            "portfolio", "投資組合",
+            analyze_portfolio,
+            holdings6, mc_orig["total_value"],
+            mc_orig["percentiles"]["P99"], mc_orig["percentiles"]["P90"],
+            mc_orig["percentiles"]["P50"], mc_orig["percentiles"]["P10"],
+            mc_orig["percentiles"]["P01"],
+            mc_orig["loss_probability"], mc_orig["loss_starts_at"],
+            mc_orig["var_95"], mc_orig["cvar_95"],
+            mc_hedge["percentiles"]["P50"], mc_hedge["loss_probability"],
+            vix6,
+        )
     else:
         st.info("請輸入投資組合後點擊「執行模擬」。")
 
@@ -713,12 +913,12 @@ with tab_settings:
     st.divider()
     st.markdown("### API 金鑰狀態")
     from config import (FRED_API_KEY, FINNHUB_API_KEY, NEWS_API_KEY,
-                        OPENAI_API_KEY, REDDIT_CLIENT_ID, POLYGON_API_KEY)
+                        GEMINI_API_KEY, REDDIT_CLIENT_ID, POLYGON_API_KEY)
     api_status = {
         "FRED API":        bool(FRED_API_KEY),
         "Finnhub":         bool(FINNHUB_API_KEY),
         "NewsAPI":         bool(NEWS_API_KEY),
-        "OpenAI (AI摘要)": bool(OPENAI_API_KEY),
+        "Gemini (AI摘要)": bool(GEMINI_API_KEY),
         "Reddit (PRAW)":   bool(REDDIT_CLIENT_ID),
         "Polygon.io":      bool(POLYGON_API_KEY),
     }

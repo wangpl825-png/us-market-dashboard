@@ -18,14 +18,16 @@ _FONT     = dict(family="Inter, sans-serif", color=COLORS["text"])
 
 
 def _base_layout(**kwargs) -> dict:
-    return dict(
+    base = dict(
         template=_TEMPLATE,
         paper_bgcolor=_BG,
         plot_bgcolor=_BG,
         font=_FONT,
-        margin=dict(l=10, r=10, t=40, b=10),
-        **kwargs,
     )
+    if "margin" not in kwargs:
+        base["margin"] = dict(l=10, r=10, t=40, b=10)
+    base.update(kwargs)
+    return base
 
 
 # ── Candlestick + Indicators ──────────────────────────────

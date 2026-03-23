@@ -273,7 +273,7 @@ def compute_news_sentiment(articles: List[Dict]) -> Dict:
                   "inflation", "tariff", "default", "bankrupt"}
     counts = {"bullish": 0, "bearish": 0, "neutral": 0}
     for a in articles:
-        text = (a.get("title", "") + " " + a.get("summary", "")).lower()
+        text = (str(a.get("title") or "") + " " + str(a.get("summary") or "")).lower()
         words = set(text.split())
         b_score = len(words & bullish_kw)
         n_score = len(words & bearish_kw)
