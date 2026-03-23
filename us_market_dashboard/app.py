@@ -35,7 +35,8 @@ from scrapers.news_scraper import (
 )
 from analysis.summarizer import (
     summarize_news, compare_with_crashes, generate_hedge_strategy,
-    summarize_ticker,
+    summarize_ticker, analyze_overview, analyze_stock, analyze_macro,
+    analyze_news_sentiment, analyze_mc_results, analyze_portfolio,
 )
 from simulation.monte_carlo import (
     run_single_asset_mc, run_portfolio_mc, format_percentile_table,
