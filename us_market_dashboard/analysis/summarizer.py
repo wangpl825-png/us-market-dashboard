@@ -13,7 +13,8 @@ from config import GEMINI_API_KEY, CRASH_PERIODS
 
 def _gemini(prompt: str, max_tokens: int = 800) -> str:
     """Wrapper around Google Gemini API (gemini-2.0-flash)."""
-    if not GEMINI_API_KEY:
+    from config import GEMINI_API_KEY as _KEY
+    if not _KEY:
         return ""
     try:
         url = (
@@ -29,7 +30,9 @@ def _gemini(prompt: str, max_tokens: int = 800) -> str:
             "contents": [
                 {
                     "role": "user",
-                    "parts": [{"text": system_instruction + "\n\n" + prompt}],
+                    "parts": [{"text": system_instruction + "
+
+" + prompt}],
                 }
             ],
             "generationConfig": {
