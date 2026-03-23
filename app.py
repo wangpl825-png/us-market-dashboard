@@ -63,6 +63,30 @@ def show_glossary(terms: dict, title: str = "📖 名詞說明"):
 
 
 
+
+# ── AI analysis section helper ────────────────────────────
+def _ai_section(section_key: str, label: str, fn, *args, **kwargs):
+    st.divider()
+    st.subheader("🤖 AI 綜合解讀")
+    result_key = f"ai_{section_key}"
+    col_btn, col_tip = st.columns([2, 3])
+    with col_btn:
+        if st.button(f"✨ 生成 {label} 綜合分析",
+                     key=f"btn_{section_key}", type="primary"):
+            with st.spinner("Gemini AI 分析中..."):
+                st.session_state[result_key] = fn(*args, **kwargs)
+    with col_tip:
+        st.caption("點擊按鈕，AI 將整合本頁所有數據，以白話文解讀市場狀況")
+    if result_key in st.session_state and st.session_state[result_key]:
+        st.markdown(
+            f'''<div style="
+                background:#1a2332;border-left:4px solid #2979FF;
+                border-radius:8px;padding:16px 20px;margin-top:12px;
+                font-size:0.9rem;line-height:1.8;color:#FAFAFA;
+            ">{st.session_state[result_key]}</div>''',
+            unsafe_allow_html=True,
+        )
+
 # ── Global CSS ────────────────────────────────────────────
 st.markdown("""
 <style>
