@@ -913,8 +913,28 @@ with tab_settings:
 
     st.divider()
     st.markdown("### API 金鑰狀態")
+
+    # ── 診斷工具 ─────────────────────────────────────────
+    st.markdown("#### 🔍 Secrets 診斷")
+    try:
+        raw_secrets = dict(st.secrets)
+        secret_keys = list(raw_secrets.keys())
+        st.success(f"Streamlit secrets 找到 {len(secret_keys)} 個 keys: {secret_keys}")
+    except Exception as e:
+        st.error(f"無法讀取 st.secrets: {e}")
+
+    gemini_direct = st.secrets.get("GEMINI_API_KEY", "")
+    if gemini_direct:
+        st.success(f"GEMINI_API_KEY 直接讀取成功，前8碼: {gemini_direct[:8]}...")
+    else:
+        st.error("GEMINI_API_KEY 直接讀取失敗（空值）")
+
     from config import (FRED_API_KEY, FINNHUB_API_KEY, NEWS_API_KEY,
                         GEMINI_API_KEY, REDDIT_CLIENT_ID, POLYGON_API_KEY)
+    if GEMINI_API_KEY:
+        st.success(f"config.py GEMINI_API_KEY 讀取成功，前8碼: {GEMINI_API_KEY[:8]}...")
+    else:
+        st.error("config.py GEMINI_API_KEY 讀取失敗")
     api_status = {
         "FRED API":        bool(FRED_API_KEY),
         "Finnhub":         bool(FINNHUB_API_KEY),
