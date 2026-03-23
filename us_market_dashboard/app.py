@@ -935,6 +935,28 @@ with tab_settings:
         st.success(f"config.py GEMINI_API_KEY 讀取成功，前8碼: {GEMINI_API_KEY[:8]}...")
     else:
         st.error("config.py GEMINI_API_KEY 讀取失敗")
+
+    # ── 直接測試 Gemini API ───────────────────────────────
+    st.markdown("#### 🧪 Gemini API 直接測試")
+    if st.button("測試 Gemini API", key="test_gemini"):
+        import requests as _req
+        _key = st.secrets.get("GEMINI_API_KEY", "")
+        _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_key}"
+        _payload = {
+            "contents": [{"role": "user", "parts": [{"text": "用一句繁體中文說你好"}]}],
+            "generationConfig": {"maxOutputTokens": 50, "temperature": 0.3},
+        }
+        try:
+            _r = _req.post(_url, json=_payload, timeout=15)
+            _data = _r.json()
+            st.code(str(_data)[:500])
+            if "candidates" in _data:
+                _txt = _data["candidates"][0]["content"]["parts"][0]["text"]
+                st.success(f"Gemini 回應成功：{_txt}")
+            else:
+                st.error(f"Gemini 回應異常：{_data}")
+        except Exception as _e:
+            st.error(f"請求失敗：{_e}")
     api_status = {
         "FRED API":        bool(FRED_API_KEY),
         "Finnhub":         bool(FINNHUB_API_KEY),
