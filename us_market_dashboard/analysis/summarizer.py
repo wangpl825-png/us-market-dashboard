@@ -12,13 +12,13 @@ from config import GEMINI_API_KEY, CRASH_PERIODS
 
 
 def _gemini(prompt: str, max_tokens: int = 800) -> str:
-    """Wrapper around Google Gemini API (gemini-1.5-flash)."""
+    """Wrapper around Google Gemini API (gemini-2.0-flash)."""
     if not GEMINI_API_KEY:
         return ""
     try:
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            f"gemini-2.0-flash:generateContent?key={_KEY}"
         )
         system_instruction = (
             "You are a professional financial analyst. "
